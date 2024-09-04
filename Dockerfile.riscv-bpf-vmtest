@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: Apache-2.0
+
+FROM ubuntu:noble
+
+ARG DEBIAN_FRONTEND=noninteractive
+ 
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+	bc \
+	bison \
+	bzip2 \
+	ca-certificates \
+	cmake \
+	cpio \
+	curl \
+	flex \
+	gcc \
+	g++ \
+	gcc-riscv64-linux-gnu \
+	g++-riscv64-linux-gnu \
+	git \
+	libcap-dev \
+	libdw-dev \
+	libdwarf-dev \
+	libelf-dev \
+	libglib2.0-dev \
+	libncurses-dev \
+	libssl-dev \
+	lsb-release \
+	make \
+	ninja-build \
+	python3-docutils \
+	python3-venv \
+	rsync \
+	sudo \
+	vim \
+	wget \
+	xz-utils \
+	zstd
+
+# llvm 17
+RUN echo 'deb [arch=amd64] http://apt.llvm.org/noble/ llvm-toolchain-noble-17 main' > /etc/apt/sources.list.d/llvm.list
+RUN wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+RUN apt-get update && apt-get install --yes clang-17 llvm-17 lld-17
+
+# pahole
+RUN cd $(mktemp -d) && git clone https://git.kernel.org/pub/scm/devel/pahole/pahole.git && \
+    cd pahole && mkdir build && cd build && cmake -D__LIB=lib .. && make -j$(nproc) install
+
+# qemu 8.2.0
+RUN cd $(mktemp -d) && wget -q https://download.qemu.org/qemu-8.2.0.tar.xz && tar xJf qemu-8.2.0.tar.xz && \
+    cd qemu-8.2.0 && ./configure --target-list=riscv64-softmmu && make install -j$(nproc)
+
+RUN dpkg --add-architecture riscv64
+RUN sed -i '/Signed-By/a\Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
+RUN echo '\
+deb [arch=riscv64] http://ports.ubuntu.com/ubuntu-ports noble main restricted multiverse universe\n\
+deb [arch=riscv64] http://ports.ubuntu.com/ubuntu-ports noble-updates main\n\
+deb [arch=riscv64] http://ports.ubuntu.com/ubuntu-ports noble-security main\n'\
+>> /etc/apt/sources.list.d/riscv64.list
+
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+	libcap-dev:riscv64 \
+	libelf-dev:riscv64 \
+	libssl-dev:riscv64
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/
+
+RUN ln -s /usr/bin/llc-17 /usr/bin/llc
+RUN ln -s /usr/bin/clang-17 /usr/bin/clang
+RUN ln -s /usr/bin/llvm-strip-17 /usr/bin/llvm-strip
+RUN ln -s /usr/bin/llvm-config-17 /usr/bin/llvm-config
+
+RUN git config --global --add safe.directory '*'
+
+# The workspace volume is for bind-mounted source trees.
+VOLUME /workspace
+WORKDIR /workspace
