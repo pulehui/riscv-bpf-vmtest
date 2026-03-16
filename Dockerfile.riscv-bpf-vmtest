@@ -37,10 +37,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 	xz-utils \
 	zstd
 
-# llvm 17
-RUN echo 'deb [arch=amd64] http://apt.llvm.org/noble/ llvm-toolchain-noble-17 main' > /etc/apt/sources.list.d/llvm.list
+# llvm 21
+RUN echo 'deb [arch=amd64] http://apt.llvm.org/noble/ llvm-toolchain-noble-21 main' > /etc/apt/sources.list.d/llvm.list
 RUN wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-RUN apt-get update && apt-get install --yes clang-17 llvm-17 lld-17
+RUN apt-get update && apt-get install --yes clang-21 llvm-21 lld-21
 
 # pahole
 RUN cd $(mktemp -d) && git clone https://git.kernel.org/pub/scm/devel/pahole/pahole.git && \
@@ -65,10 +65,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/
 
-RUN ln -s /usr/bin/llc-17 /usr/bin/llc
-RUN ln -s /usr/bin/clang-17 /usr/bin/clang
-RUN ln -s /usr/bin/llvm-strip-17 /usr/bin/llvm-strip
-RUN ln -s /usr/bin/llvm-config-17 /usr/bin/llvm-config
+RUN ln -s /usr/bin/llc-21 /usr/bin/llc
+RUN ln -s /usr/bin/clang-21 /usr/bin/clang
+RUN ln -s /usr/bin/llvm-strip-21 /usr/bin/llvm-strip
+RUN ln -s /usr/bin/llvm-config-21 /usr/bin/llvm-config
 
 RUN git config --global --add safe.directory '*'
 
