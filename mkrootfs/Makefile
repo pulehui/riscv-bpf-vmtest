@@ -1,5 +1,5 @@
-ARCHS = amd64 arm64 s390x riscv64
-DISTROS = noble
+ARCHS = riscv64
+DISTROS = resolute
 
 .PHONY: all
 all:

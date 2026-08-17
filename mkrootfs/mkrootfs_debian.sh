@@ -3,11 +3,8 @@
 # virtual machine. Requires debootstrap >= 1.0.95 and zstd.
 
 # Use e.g. ./mkrootfs_debian.sh --arch=s390x to generate a rootfs for a
-# foreign architecture. Requires configured binfmt_misc, e.g. using
-# Debian/Ubuntu's qemu-user-binfmt package or
-# https://github.com/multiarch/qemu-user-static.
-# Any arguments that need to be passed to `debootstrap` should be passed after
-# `--`, e.g ./mkrootfs_debian.sh --arch=s390x -- --foo=bar
+# foreign architecture. Any arguments that need to be passed to `debootstrap`
+# should be passed after `--`, e.g ./mkrootfs_debian.sh --arch=s390x -- --foo=bar
 
 set -e -u -o pipefail
 
@@ -40,16 +37,6 @@ function debian_to_gnu() {
     awk -v deb_arch="$1" '$1 ~ deb_arch {print $2}' "${CPUTABLE}"
 }
 
-function qemu_static() {
-    # Given a Debian architecture find the location of the matching
-    # qemu-${gnu_arch}-static binary.
-    gnu_arch=$(debian_to_gnu "${1}")
-    if [ "$deb_arch" == "ppc64el" ]; then
-	    gnu_arch="ppc64le"
-    fi
-    echo "qemu-${gnu_arch}-static"
-}
-
 function check_requirements() {
     # Checks that all necessary packages are installed on the system.
     # Prints an error message explaining what is missing and exits.
@@ -68,14 +55,6 @@ function check_requirements() {
     if [[ -z $(debian_to_gnu "${deb_arch}") ]]
     then
         error "${deb_arch} is not a supported architecture."
-        err=1
-    fi
-
-    # Check that we can install the root image for a foreign arch.
-    qemu=$(qemu_static "${deb_arch}")
-    if ! command -v "${qemu}" &> /dev/null
-    then
-        error "${qemu} binary not found on your system. Make sure qemu-user-static package is installed."
         err=1
     fi
 
@@ -167,10 +146,6 @@ debootstrap --include="$packages" \
     "${distro}" \
     "$root"
 
-qemu=$(which $(qemu_static ${deb_arch}))
-
-cp "${qemu}" "${root}/usr/bin"
-
 # Stage 2
 chroot "${root}" /debootstrap/debootstrap --second-stage
 
@@ -180,8 +155,7 @@ rm -rf \
 	"$root"/etc/rcS.d \
 	"$root"/usr/share/{doc,info,locale,man,zoneinfo} \
 	"$root"/var/cache/apt/archives/* \
-	"$root"/var/lib/apt/lists/* \
-	"${root}/usr/bin/${qemu}"
+	"$root"/var/lib/apt/lists/*
 
 # Apply common tweaks.
 "$(dirname "$0")"/mkrootfs_tweak.sh "$root"
