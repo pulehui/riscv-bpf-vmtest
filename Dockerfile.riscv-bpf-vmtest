@@ -46,9 +46,9 @@ RUN apt-get update && apt-get install --yes clang-21 llvm-21 lld-21
 RUN cd $(mktemp -d) && git clone https://git.kernel.org/pub/scm/devel/pahole/pahole.git --depth=1 && \
     cd pahole && mkdir build && cd build && cmake -DBUILD_SHARED_LIBS=OFF .. && make -j$(nproc) install
 
-# qemu 8.2.0
-RUN cd $(mktemp -d) && wget -q https://download.qemu.org/qemu-8.2.0.tar.xz && tar xJf qemu-8.2.0.tar.xz && \
-    cd qemu-8.2.0 && ./configure --target-list=riscv64-softmmu && make install -j$(nproc)
+# qemu 11.1.0
+RUN cd $(mktemp -d) && wget -q https://download.qemu.org/qemu-11.1.0.tar.xz && tar xJf qemu-11.1.0.tar.xz && \
+    cd qemu-11.1.0 && ./configure --target-list=riscv64-softmmu && make install -j$(nproc)
 
 RUN dpkg --add-architecture riscv64
 RUN sed -i '/Signed-By/a\Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
