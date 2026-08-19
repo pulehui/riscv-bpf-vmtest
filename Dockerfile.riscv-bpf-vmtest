@@ -50,12 +50,16 @@ RUN cd $(mktemp -d) && git clone https://git.kernel.org/pub/scm/devel/pahole/pah
 RUN cd $(mktemp -d) && wget -q https://download.qemu.org/qemu-11.1.0.tar.xz && tar xJf qemu-11.1.0.tar.xz && \
     cd qemu-11.1.0 && ./configure --target-list=riscv64-softmmu && make install -j$(nproc)
 
+# copy rootfs
+COPY image/libbpf-vmtest-rootfs-2026.08.17-resolute-riscv64.tar.zst /root
+
+# riscv64 dependencies
 RUN dpkg --add-architecture riscv64
 RUN sed -i '/Signed-By/a\Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
-RUN echo '\
-deb [arch=riscv64] http://ports.ubuntu.com/ubuntu-ports resolute main restricted multiverse universe\n\
-deb [arch=riscv64] http://ports.ubuntu.com/ubuntu-ports resolute-updates main\n\
-deb [arch=riscv64] http://ports.ubuntu.com/ubuntu-ports resolute-security main\n'\
+RUN echo ' \
+deb [arch=riscv64] http://ports.ubuntu.com/ubuntu-ports resolute main restricted multiverse universe\n \
+deb [arch=riscv64] http://ports.ubuntu.com/ubuntu-ports resolute-updates main\n \
+deb [arch=riscv64] http://ports.ubuntu.com/ubuntu-ports resolute-security main\n' \
 >> /etc/apt/sources.list.d/riscv64.list
 
 RUN apt-get update && apt-get install --yes --no-install-recommends \
@@ -63,14 +67,14 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 	libelf-dev:riscv64 \
 	libssl-dev:riscv64
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/
-
 RUN ln -s /usr/bin/llc-21 /usr/bin/llc
 RUN ln -s /usr/bin/clang-21 /usr/bin/clang
 RUN ln -s /usr/bin/llvm-strip-21 /usr/bin/llvm-strip
 RUN ln -s /usr/bin/llvm-config-21 /usr/bin/llvm-config
 
 RUN git config --global --add safe.directory '*'
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/
 RUN rm -fr /tmp/*
 
 # The workspace volume is for bind-mounted source trees.
